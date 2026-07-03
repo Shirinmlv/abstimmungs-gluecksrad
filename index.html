@@ -577,6 +577,13 @@
 </div>
 
 <script>
+  const SUPABASE_URL = 'DEINE_URL';
+const SUPABASE_KEY = 'DEIN_ANON_KEY';
+
+const supabase = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 // ─── STATE ────────────────────────────────────────────────
 const COLORS = [
   '#6c7dff','#ff6b6b','#ffd93d','#4ecdc4',
@@ -891,5 +898,6 @@ function escapeAttr(s) {
 // ─── BOOT ─────────────────────────────────────────────────
 init();
 </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </body>
 </html>
