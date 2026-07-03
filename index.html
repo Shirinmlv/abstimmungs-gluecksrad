@@ -481,6 +481,19 @@
 </style>
 </head>
 <body>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+const SUPABASE_URL = 'HIER_DEINE_URL';
+const SUPABASE_ANON_KEY = 'HIER_DEIN_KEY';
+
+const db = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
+
+console.log("Supabase verbunden");
+</script>
 
 <header>
   <div class="logo">Glücks<span>rad</span></div>
@@ -577,15 +590,7 @@
 </div>
 
 <script>
-  const SUPABASE_URL = 'DEINE_URL';
-const SUPABASE_KEY = 'DEIN_ANON_KEY';
-
-const supabase = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
-
-console.log("Supabase verbunden");
+ 
 // ─── STATE ────────────────────────────────────────────────
 const COLORS = [
   '#6c7dff','#ff6b6b','#ffd93d','#4ecdc4',
@@ -898,8 +903,25 @@ function escapeAttr(s) {
 }
 
 // ─── BOOT ─────────────────────────────────────────────────
-init();
+async function testDB() {
+  const { data, error } = await db
+    .from('polls')
+    .insert([
+      {
+        question: 'Testfrage',
+        options: [
+          { label: 'Ja', votes: 1 },
+          { label: 'Nein', votes: 2 }
+        ]
+      }
+    ]);
+
+  console.log("DATA:", data);
+  console.log("ERROR:", error);
+}
+
+testDB();
+  init();
 </script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </body>
 </html>
