@@ -484,6 +484,17 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
+  window.addEventListener('load', async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const pollId = urlParams.get('poll');
+
+  if (pollId) {
+    currentPollId = pollId;
+    await loadPoll();
+    await loadVotes();
+    showVotingScreen();
+  }
+});
 const SUPABASE_URL = "https://pzhmbasimqavtafqryby.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6aG1iYXNpbXFhdnRhZnFyeWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwODUzNjQsImV4cCI6MjA5ODY2MTM2NH0.iXaN6yyVdBxIjsK_6cYP1FozhP-BSvqSMBgEAxF1bfs";
 
@@ -685,6 +696,9 @@ async function startVoting() {
 
   currentPollId = data[0].id;
 
+  const shareUrl = `${window.location.origin}?poll=${currentPollId}`;
+console.log("Share Link:", shareUrl);
+
   renderVotingPhase();
   showPhase(2);
 
@@ -724,6 +738,28 @@ function showPhase(n) {
 }
 
 // ─── VOTING ──────────────────────────────────────────────
+  async function loadPoll() {
+  const { data, error } = await db
+    .from('polls')
+    .select('*')
+    .eq('id', currentPollId)
+    .single();
+
+  if (error) {
+    console.log("Poll load error:", error);
+    return;
+  }
+
+  question = data.question;
+  options = data.options.map(o => ({
+    label: o.label,
+    color: o.color,
+    votes: 0
+  }));
+
+  renderVotingPhase();
+}
+  
 function renderVotingPhase() {
   document.getElementById('voteQuestion').textContent = question;
   renderVoteButtons();
