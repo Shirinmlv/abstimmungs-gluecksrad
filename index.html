@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glücksrad</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&family=Space+Mono:wght@400;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a22;
+    --surface2: #23232e;
+    --border: #2e2e3d;
+    --text: #f0eff8;
+    --muted: #7a798a;
+    --accent: #c8ff57;
+    --accent-dark: #8fb83a;
+    --radius: 12px;
+    --seg-colors: #6c7dff, #ff6b6b, #ffd93d, #a8e6cf, #ff9f43, #c77dff, #4ecdc4, #ff6b9d;
+  }
+
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header {
+    width: 100%;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+
+  header .logo span { color: var(--muted); }
+
+  /* PHASE TABS */
+  .phase-nav {
+    display: flex;
+    gap: 0;
+    padding: 1.5rem 2rem 0;
+    width: 100%;
+    max-width: 1100px;
+  }
+
+  .phase-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 2px solid var(--border);
+    cursor: default;
+    transition: color 0.2s;
+  }
+
+  .phase-tab.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+
+  .phase-tab.done { color: var(--accent-dark); }
+
+  .phase-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .phase-tab.active .phase-num { background: var(--accent); color: #000; }
+  .phase-tab.done .phase-num { background: var(--accent-dark); color: #000; }
+
+  /* MAIN CONTAINER */
+  .main {
+    width: 100%;
+    max-width: 1100px;
+    padding: 2rem;
+    flex: 1;
+  }
+
+  /* PHASE 1 – SETUP */
+  #phase-setup { display: block; }
+  #phase-vote  { display: none; }
+  #phase-wheel { display: none; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .card h2 {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  input[type="text"], textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+
+  .options-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .option-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .option-color {
+    width: 18px; height: 18px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .option-row input { flex: 1; }
+
+  .btn-remove {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0 0.3rem;
+    transition: color 0.2s;
+  }
+  .btn-remove:hover { color: #ff6b6b; }
+
+  .btn-add {
+    margin-top: 0.75rem;
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    color: var(--muted);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+  }
+  .btn-add:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 0.9rem 2rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .btn-primary:hover { background: #d9ff70; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 2rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* PHASE 2 – VOTING */
+  .vote-question {
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+  }
+
+  .vote-subtitle {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .vote-options { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .vote-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    width: 100%;
+  }
+
+  .vote-btn:hover {
+    border-color: var(--accent);
+    background: var(--surface2);
+    transform: translateX(4px);
+  }
+
+  .vote-btn .v-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .vote-btn .v-count {
+    margin-left: auto;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+    background: var(--surface2);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+  }
+
+  .vote-total {
+    margin-top: 1rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* PHASE 3 – WHEEL */
+  .wheel-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  @media (max-width: 800px) {
+    .wheel-layout { grid-template-columns: 1fr; }
+  }
+
+  .wheel-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .canvas-container {
+    position: relative;
+    width: 340px;
+    height: 340px;
+  }
+
+  #wheelCanvas {
+    border-radius: 50%;
+    display: block;
+  }
+
+  /* Arrow pointer */
+  .wheel-pointer {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 30px solid var(--accent);
+    filter: drop-shadow(0 2px 6px rgba(200,255,87,0.6));
+    z-index: 10;
+  }
+
+  .wheel-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 42px; height: 42px;
+    background: var(--bg);
+    border: 3px solid var(--accent);
+    border-radius: 50%;
+    z-index: 10;
+  }
+
+  .spin-controls {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .btn-spin {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 50px;
+    padding: 0.85rem 2.2rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+  }
+  .btn-spin:hover { background: #d9ff70; transform: scale(1.04); }
+  .btn-spin:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  .btn-stop {
+    background: #ff4d4d;
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 0.85rem 2.2rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+  }
+  .btn-stop:hover { background: #ff6666; transform: scale(1.04); }
+  .btn-stop:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  /* Results panel */
+  .results-panel { }
+
+  .result-winner {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .result-winner.visible { display: block; }
+
+  .winner-trophy { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+  .winner-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .winner-text {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1.3;
+  }
+
+  /* Legend */
+  .legend { display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.65rem 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.88rem;
+  }
+
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .legend-name { flex: 1; font-weight: 500; }
+
+  .legend-pct {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .legend-bar-wrap {
+    width: 60px; height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .legend-bar { height: 100%; border-radius: 2px; }
+
+  /* Question display */
+  .wheel-question {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin-bottom: 0.3rem;
+    line-height: 1.3;
+  }
+
+  .wheel-q-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .action-row {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+  }
+
+  /* confetti */
+  .confetti-piece {
+    position: fixed;
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    animation: confettiFall 2.5s ease-out forwards;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  @keyframes confettiFall {
+    0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Glücks<span>rad</span></div>
+</header>
+
+<div class="phase-nav">
+  <div class="phase-tab active" id="tab-1">
+    <div class="phase-num">1</div> Frage erstellen
+  </div>
+  <div class="phase-tab" id="tab-2">
+    <div class="phase-num">2</div> Abstimmen
+  </div>
+  <div class="phase-tab" id="tab-3">
+    <div class="phase-num">3</div> Rad drehen
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ─── PHASE 1: SETUP ─── -->
+  <div id="phase-setup">
+    <div class="card">
+      <h2>Frage</h2>
+      <input type="text" id="questionInput" placeholder="z.B. Wie sollen wir die Prüfung gestalten?" maxlength="200">
+    </div>
+
+    <div class="card">
+      <h2>Antwortmöglichkeiten <span style="color:var(--muted);font-weight:400;text-transform:none;font-size:0.75rem;">(min. 2)</span></h2>
+      <div class="options-list" id="optionsList"></div>
+      <button class="btn-add" onclick="addOption()">+ Antwort hinzufügen</button>
+    </div>
+
+    <button class="btn-primary" id="btnStartVote" onclick="startVoting()" disabled>
+      Abstimmung starten →
+    </button>
+  </div>
+
+  <!-- ─── PHASE 2: VOTING ─── -->
+  <div id="phase-vote">
+    <div class="card">
+      <h2>Abstimmung läuft</h2>
+      <div class="vote-question" id="voteQuestion"></div>
+      <div class="vote-subtitle">Wähle eine Option – mehrere Stimmen möglich</div>
+      <div class="vote-options" id="voteOptions"></div>
+      <div class="vote-total" id="voteTotalDisplay">0 Stimmen</div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-primary" onclick="startWheel()">Zum Glücksrad →</button>
+      <button class="btn-secondary" onclick="goBack(1)">← Bearbeiten</button>
+    </div>
+  </div>
+
+  <!-- ─── PHASE 3: WHEEL ─── -->
+  <div id="phase-wheel">
+    <div class="wheel-layout">
+
+      <div class="wheel-wrapper">
+        <div class="canvas-container">
+          <div class="wheel-pointer"></div>
+          <canvas id="wheelCanvas" width="340" height="340"></canvas>
+          <div class="wheel-center"></div>
+        </div>
+
+        <div class="spin-controls">
+          <button class="btn-spin" id="btnSpin" onclick="spinWheel()">SPIN 🎡</button>
+          <button class="btn-stop" id="btnStop" onclick="stopWheel()" disabled>STOP ✋</button>
+        </div>
+
+        <div class="action-row" style="justify-content:center;">
+          <button class="btn-secondary" onclick="goBack(2)">← Mehr Stimmen</button>
+          <button class="btn-secondary" onclick="resetAll()">↺ Neu starten</button>
+        </div>
+      </div>
+
+      <div class="results-panel">
+        <div class="result-winner" id="winnerBox">
+          <div class="winner-trophy">🏆</div>
+          <div class="winner-label">Winner</div>
+          <div class="winner-text" id="winnerText"></div>
+        </div>
+
+        <div class="card">
+          <div class="wheel-q-label">Frage</div>
+          <div class="wheel-question" id="wheelQuestion"></div>
+        </div>
+
+        <div class="legend" id="legendList"></div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────
+const COLORS = [
+  '#6c7dff','#ff6b6b','#ffd93d','#4ecdc4',
+  '#ff9f43','#c77dff','#a8e6cf','#ff6b9d'
+];
+
+let options = [];     // { label, color, votes }
+let question = '';
+
+// Wheel animation
+let angle = 0;         // current rotation in radians
+let velocity = 0;
+let spinning = false;
+let stopping = false;
+let rafId = null;
+
+// ─── SETUP ────────────────────────────────────────────────
+function init() {
+  addOption('');
+  addOption('');
+  document.getElementById('questionInput').addEventListener('input', validateSetup);
+}
+
+function addOption(label = '') {
+  const idx = options.length;
+  if (idx >= 8) return;
+  options.push({ label, color: COLORS[idx % COLORS.length], votes: 0 });
+  renderOptionsList();
+  validateSetup();
+}
+
+function removeOption(idx) {
+  if (options.length <= 2) return;
+  options.splice(idx, 1);
+  // reassign colors
+  options.forEach((o, i) => o.color = COLORS[i % COLORS.length]);
+  renderOptionsList();
+  validateSetup();
+}
+
+function renderOptionsList() {
+  const list = document.getElementById('optionsList');
+  list.innerHTML = '';
+  options.forEach((opt, i) => {
+    const row = document.createElement('div');
+    row.className = 'option-row';
+    row.innerHTML = `
+      <div class="option-color" style="background:${opt.color}"></div>
+      <input type="text" placeholder="Antwort ${i+1}…" value="${escapeAttr(opt.label)}"
+        oninput="updateOptionLabel(${i}, this.value)" maxlength="80">
+      ${options.length > 2 ? `<button class="btn-remove" onclick="removeOption(${i})" title="Entfernen">×</button>` : ''}
+    `;
+    list.appendChild(row);
+  });
+}
+
+function updateOptionLabel(idx, val) {
+  options[idx].label = val;
+  validateSetup();
+}
+
+function validateSetup() {
+  const q = document.getElementById('questionInput').value.trim();
+  const allFilled = options.every(o => o.label.trim().length > 0);
+  document.getElementById('btnStartVote').disabled = !(q && allFilled && options.length >= 2);
+}
+
+// ─── PHASE TRANSITIONS ───────────────────────────────────
+function startVoting() {
+  question = document.getElementById('questionInput').value.trim();
+  options.forEach(o => o.votes = 0);
+  renderVotingPhase();
+  showPhase(2);
+}
+
+function startWheel() {
+  const total = options.reduce((s, o) => s + o.votes, 0);
+  if (total === 0) {
+    // Give each option 1 vote if none cast
+    options.forEach(o => o.votes = 1);
+  }
+  renderWheel();
+  renderLegend();
+  document.getElementById('wheelQuestion').textContent = question;
+  document.getElementById('winnerBox').classList.remove('visible');
+  showPhase(3);
+  // reset spin state
+  spinning = false;
+  stopping = false;
+  velocity = 0;
+  document.getElementById('btnSpin').disabled = false;
+  document.getElementById('btnStop').disabled = true;
+}
+
+function goBack(phase) { showPhase(phase); }
+
+function showPhase(n) {
+  document.getElementById('phase-setup').style.display = n === 1 ? 'block' : 'none';
+  document.getElementById('phase-vote').style.display  = n === 2 ? 'block' : 'none';
+  document.getElementById('phase-wheel').style.display = n === 3 ? 'block' : 'none';
+  [1,2,3].forEach(i => {
+    const tab = document.getElementById(`tab-${i}`);
+    tab.className = 'phase-tab' + (i === n ? ' active' : (i < n ? ' done' : ''));
+  });
+}
+
+// ─── VOTING ──────────────────────────────────────────────
+function renderVotingPhase() {
+  document.getElementById('voteQuestion').textContent = question;
+  renderVoteButtons();
+}
+
+function renderVoteButtons() {
+  const container = document.getElementById('voteOptions');
+  container.innerHTML = '';
+  const total = options.reduce((s, o) => s + o.votes, 0);
+  options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'vote-btn';
+    btn.innerHTML = `
+      <div class="v-dot" style="background:${opt.color}"></div>
+      <span>${escapeHtml(opt.label)}</span>
+      <span class="v-count">${opt.votes}</span>
+    `;
+    btn.onclick = () => {
+      options[i].votes++;
+      renderVoteButtons();
+      updateVoteTotal();
+    };
+    container.appendChild(btn);
+  });
+  updateVoteTotal();
+}
+
+function updateVoteTotal() {
+  const total = options.reduce((s, o) => s + o.votes, 0);
+  document.getElementById('voteTotalDisplay').textContent =
+    `${total} Stimme${total !== 1 ? 'n' : ''} abgegeben`;
+}
+
+// ─── WHEEL ───────────────────────────────────────────────
+function renderWheel() {
+  const canvas = document.getElementById('wheelCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2, r = W / 2 - 4;
+  ctx.clearRect(0, 0, W, H);
+
+  const total = options.reduce((s, o) => s + o.votes, 0) || options.length;
+  let startAngle = angle;
+
+  options.forEach(opt => {
+    const slice = (opt.votes || 1) / total * 2 * Math.PI;
+    // Segment
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startAngle, startAngle + slice);
+    ctx.closePath();
+    ctx.fillStyle = opt.color;
+    ctx.fill();
+    ctx.strokeStyle = '#0f0f13';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Label
+    const mid = startAngle + slice / 2;
+    const lx = cx + Math.cos(mid) * r * 0.62;
+    const ly = cy + Math.sin(mid) * r * 0.62;
+    const label = opt.label.length > 16 ? opt.label.slice(0, 14) + '…' : opt.label;
+    ctx.save();
+    ctx.translate(lx, ly);
+    ctx.rotate(mid + Math.PI / 2);
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 11px Space Grotesk, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, 0, 0);
+    ctx.restore();
+
+    startAngle += slice;
+  });
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+  ctx.strokeStyle = '#2e2e3d';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+}
+
+function spinWheel() {
+  if (spinning) return;
+  spinning = true;
+  stopping = false;
+  velocity = 0.18 + Math.random() * 0.12;   // radians/frame
+  document.getElementById('btnSpin').disabled = true;
+  document.getElementById('btnStop').disabled = false;
+  document.getElementById('winnerBox').classList.remove('visible');
+  animate();
+}
+
+function stopWheel() {
+  if (!spinning) return;
+  stopping = true;
+  document.getElementById('btnStop').disabled = true;
+}
+
+function animate() {
+  if (stopping) {
+    velocity *= 0.964;
+    if (velocity < 0.003) {
+      velocity = 0;
+      spinning = false;
+      stopping = false;
+      renderWheel();
+      revealWinner();
+      document.getElementById('btnSpin').disabled = false;
+      return;
+    }
+  }
+  angle += velocity;
+  if (angle > 2 * Math.PI * 100) angle -= 2 * Math.PI * 100;
+  renderWheel();
+  rafId = requestAnimationFrame(animate);
+}
+
+function getWinner() {
+  // The pointer is at top = -π/2 from canvas origin
+  // Wheel rotates by `angle`, so the segment at top:
+  //   pointer position in wheel-frame = -angle - π/2 (mod 2π)
+  const total = options.reduce((s, o) => s + o.votes, 0) || options.length;
+  let ptr = ((-angle - Math.PI / 2) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  let acc = 0;
+  for (let i = 0; i < options.length; i++) {
+    const slice = (options[i].votes || 1) / total * 2 * Math.PI;
+    acc += slice;
+    if (ptr < acc) return options[i];
+  }
+  return options[options.length - 1];
+}
+
+function revealWinner() {
+  const winner = getWinner();
+  document.getElementById('winnerText').textContent = winner.label;
+  const box = document.getElementById('winnerBox');
+  box.style.borderColor = winner.color;
+  box.classList.add('visible');
+  launchConfetti(winner.color);
+}
+
+function renderLegend() {
+  const total = options.reduce((s, o) => s + o.votes, 0) || options.length;
+  const list = document.getElementById('legendList');
+  list.innerHTML = '';
+  const sorted = [...options].sort((a, b) => (b.votes || 1) - (a.votes || 1));
+  sorted.forEach(opt => {
+    const pct = Math.round(((opt.votes || 1) / total) * 100);
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `
+      <div class="legend-dot" style="background:${opt.color}"></div>
+      <span class="legend-name">${escapeHtml(opt.label)}</span>
+      <div class="legend-bar-wrap">
+        <div class="legend-bar" style="width:${pct}%;background:${opt.color}"></div>
+      </div>
+      <span class="legend-pct">${pct}%</span>
+    `;
+    list.appendChild(item);
+  });
+}
+
+function resetAll() {
+  if (rafId) cancelAnimationFrame(rafId);
+  spinning = false;
+  stopping = false;
+  velocity = 0;
+  angle = 0;
+  options = [];
+  addOption('');
+  addOption('');
+  document.getElementById('questionInput').value = '';
+  validateSetup();
+  showPhase(1);
+}
+
+// ─── CONFETTI ─────────────────────────────────────────────
+function launchConfetti(color) {
+  for (let i = 0; i < 55; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const c = Math.random() > 0.5 ? color : '#c8ff57';
+    el.style.cssText = `
+      left: ${20 + Math.random() * 60}vw;
+      top: 0;
+      background: ${c};
+      animation-delay: ${Math.random() * 0.8}s;
+      animation-duration: ${1.8 + Math.random() * 1.2}s;
+    `;
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  }
+}
+
+// ─── UTILS ────────────────────────────────────────────────
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escapeAttr(s) {
+  return s.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ─── BOOT ─────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
