@@ -590,6 +590,7 @@ console.log("Supabase verbunden");
 </div>
 
 <script>
+  let currentPollId = null;
  
 // ─── STATE ────────────────────────────────────────────────
 const COLORS = [
@@ -659,11 +660,36 @@ function validateSetup() {
 }
 
 // ─── PHASE TRANSITIONS ───────────────────────────────────
-function startVoting() {
+async function startVoting() {
   question = document.getElementById('questionInput').value.trim();
   options.forEach(o => o.votes = 0);
+
+  
+  const { data, error } = await db
+    .from('polls')
+    .insert([
+      {
+        question,
+        options: options.map(o => ({
+          label: o.label,
+          color: o.color
+        }))
+      }
+    ])
+    .select();
+
+  if (error) {
+    console.log("Poll create error:", error);
+    return;
+  }
+
+  currentPollId = data[0].id;
+
   renderVotingPhase();
   showPhase(2);
+
+  // optional: live load initial
+  await loadVotes();
 }
 
 function startWheel() {
@@ -706,22 +732,71 @@ function renderVotingPhase() {
 function renderVoteButtons() {
   const container = document.getElementById('voteOptions');
   container.innerHTML = '';
+
   const total = options.reduce((s, o) => s + o.votes, 0);
+
   options.forEach((opt, i) => {
     const btn = document.createElement('button');
     btn.className = 'vote-btn';
+
     btn.innerHTML = `
       <div class="v-dot" style="background:${opt.color}"></div>
       <span>${escapeHtml(opt.label)}</span>
       <span class="v-count">${opt.votes}</span>
     `;
-    btn.onclick = () => {
-      options[i].votes++;
-      renderVoteButtons();
-      updateVoteTotal();
+
+    btn.onclick = async () => {
+      await vote(i);
     };
+
     container.appendChild(btn);
   });
+
+  updateVoteTotal();
+}
+
+  async function vote(optionIndex) {
+  if (!currentPollId) return;
+
+  const { error } = await db.from('votes').insert([
+    {
+      poll_id: currentPollId,
+      option_index: optionIndex
+    }
+  ]);
+
+  if (error) {
+    console.log("Vote error:", error);
+    return;
+  }
+
+  await loadVotes();
+}
+
+  async function loadVotes() {
+  if (!currentPollId) return;
+
+  const { data, error } = await db
+    .from('votes')
+    .select('*')
+    .eq('poll_id', currentPollId);
+
+  if (error) {
+    console.log("Load error:", error);
+    return;
+  }
+
+  // reset votes
+  options.forEach(o => o.votes = 0);
+
+  // count votes
+  data.forEach(v => {
+    if (options[v.option_index]) {
+      options[v.option_index].votes++;
+    }
+  });
+
+  renderVoteButtons();
   updateVoteTotal();
 }
 
